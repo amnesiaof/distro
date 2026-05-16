@@ -1,5 +1,3 @@
--- Heavily based on https://github.com/vionya/discord-rich-presence
-
 local ffi = require("ffi")
 ffi.cdef[[
     typedef unsigned int size_t;
@@ -29,111 +27,106 @@ DiscordIPC = {
     activity = {},
     is_windows = love.system.getOS() == "Windows",
     connected = false,
+    socket = nil,
     OPCODES = {
         HANDSHAKE = 0,
         FRAME = 1,
         CLOSE = 2,
         PING = 3,
-        PONG = 4
+        PONG = 4,
     },
-    PIPE_ENVS = {
-        "XDG_RUNTIME_DIR",
-        "TMPDIR",
-        "TMP",
-        "TEMP"
-    },
-    PIPE_PATHS = {
-        "",
-        "app/com.discordapp.Discord/",
-        "snap.discord-canary/",
-        "snap.discord/"
-    }
 }
 
 function DiscordIPC.connect()
+    if DiscordIPC.connected then return true end
+
     if DiscordIPC.is_windows then
         for i = 0, 9 do
-            local file, _ = io.open("\\\\.\\pipe\\discord-ipc-"..i, "r+")
-
+            local file, err = io.open("\\\\.\\pipe\\discord-ipc-"..i, "r+b")
             if file then
                 print("Distro :: Connected to Discord IPC (pipe "..i..")")
                 DiscordIPC.socket = file
+                DiscordIPC.connected = true
+                break
             end
+        end
+        if not DiscordIPC.connected then
+            print("Distro :: Failed to connect to any Discord IPC pipe")
+            return false
         end
     else
         local socket = ffi.C.socket(1, 1, 0)
         if socket < 0 then
             print("Distro :: Failed to create Discord IPC socket")
-
             return false
         end
 
-        local env = nil
-        for _, v in ipairs(DiscordIPC.PIPE_ENVS) do
-            env = os.getenv(v)
-
-            if env then
-                if env:sub(-1) == "/" then
-                    env = env:sub(1, -2)
+        local env_path = nil
+        for _, v in ipairs({ "XDG_RUNTIME_DIR", "TMPDIR", "TMP", "TEMP" }) do
+            env_path = os.getenv(v)
+            if env_path then
+                if env_path:sub(-1) == "/" then
+                    env_path = env_path:sub(1, -2)
                 end
-
                 break
             end
         end
+        if not env_path then env_path = "/tmp" end
 
-        if not env then
-            env = "/tmp"
-        end
+        local pipe_suffixes = { "", "app/com.discordapp.Discord/", "snap.discord-canary/", "snap.discord/" }
 
+        local connected = false
         for i = 0, 9 do
-            for _, v in ipairs(DiscordIPC.PIPE_PATHS) do
+            for _, suffix in ipairs(pipe_suffixes) do
                 local address = ffi.new("struct sockaddr_un")
                 address.sun_family = 1
-                ffi.copy(address.sun_path, env.."/"..v.."discord-ipc-"..i)
+                ffi.copy(address.sun_path, env_path.."/"..suffix.."discord-ipc-"..i)
 
-                if ffi.C.connect(
-                    socket, ffi.cast("const struct sockaddr*", address), ffi.sizeof(address)
-                ) < 0 then
-                    print("Distro :: Failed to connect to Discord IPC (pipe "..i..")")
-
-                    return false
+                if ffi.C.connect(socket, ffi.cast("const struct sockaddr*", address), ffi.sizeof(address)) == 0 then
+                    print("Distro :: Connected to Discord IPC (pipe "..i..")")
+                    DiscordIPC.socket = socket
+                    DiscordIPC.connected = true
+                    connected = true
+                    break
                 end
-
-                print("Distro :: Connected to Discord IPC (pipe "..i..")")
-                DiscordIPC.socket = socket
             end
+            if connected then break end
+        end
+
+        if not connected then
+            print("Distro :: Failed to connect to any Discord IPC pipe")
+            ffi.C.close(socket)
+            return false
         end
     end
 
-    if DiscordIPC.socket then
-        DiscordIPC.connected = true
-        local result, _ = DiscordIPC.send_handshake()
-
-        return result == DiscordIPC.OPCODES.FRAME
+    local result, _ = DiscordIPC.send_handshake()
+    if result ~= DiscordIPC.OPCODES.FRAME then
+        print("Distro :: Discord IPC handshake failed")
+        DiscordIPC.close()
+        return false
     end
+
+    return true
 end
 
 function DiscordIPC.reconnect()
     DiscordIPC.close()
-    DiscordIPC.connect()
+    return DiscordIPC.connect()
 end
 
 function DiscordIPC.write(message)
-    if not DiscordIPC.socket then
-        return
-    end
+    if not DiscordIPC.socket then return end
 
     if DiscordIPC.is_windows then
         DiscordIPC.socket:seek("end")
         local _, err = DiscordIPC.socket:write(message)
         DiscordIPC.socket:flush()
-
         if err then
             print("Distro :: Failed to write to Discord IPC - "..err)
         end
     else
         local sent = ffi.C.send(DiscordIPC.socket, message, #message, 0)
-
         if sent < 0 then
             print("Distro :: Failed to write to Discord IPC")
         end
@@ -141,17 +134,19 @@ function DiscordIPC.write(message)
 end
 
 function DiscordIPC.read(buffer)
-    if not DiscordIPC.socket then
-        return
+    if not DiscordIPC.socket then return end
+    if DiscordIPC.is_windows then
+        return DiscordIPC.socket:read(buffer)
+    else
+        local data_buffer = ffi.new("char[?]", buffer)
+        local bytes = ffi.C.recv(DiscordIPC.socket, data_buffer, buffer, 0)
+        if bytes < 0 then return nil end
+        return ffi.string(data_buffer, bytes)
     end
-
-    return DiscordIPC.socket:read(buffer)
 end
 
 function DiscordIPC.close()
-    if not DiscordIPC.socket then
-        return
-    end
+    if not DiscordIPC.socket then return end
 
     DiscordIPC.send("{}", DiscordIPC.OPCODES.CLOSE)
 
@@ -172,53 +167,53 @@ end
 
 function DiscordIPC.send_handshake()
     DiscordIPC.send('{"v": 1, "client_id": "'..DiscordIPC.id..'"}', DiscordIPC.OPCODES.HANDSHAKE)
-
     return DiscordIPC.receive()
 end
 
 function DiscordIPC.send_activity()
+    if not DiscordIPC.connected then return end
     local data = {
         cmd = "SET_ACTIVITY",
         args = {
             pid = Distro.get_pid() or 9999,
-            activity = DiscordIPC.activity
+            activity = DiscordIPC.activity,
         },
-        nonce = Distro.get_uuid()
+        nonce = Distro.get_uuid(),
     }
-
     DiscordIPC.send(Distro.stringify(data), DiscordIPC.OPCODES.FRAME)
 end
 
 function DiscordIPC.clear_activity()
-    local activity = {
+    if not DiscordIPC.connected then return end
+    local data = {
         cmd = "SET_ACTIVITY",
         args = {
             pid = Distro.get_pid() or 9999,
-            activity = {}
+            activity = {},
         },
-        nonce = Distro.get_uuid()
+        nonce = Distro.get_uuid(),
     }
-
-    DiscordIPC.send(Distro.stringify(activity), DiscordIPC.OPCODES.FRAME)
+    DiscordIPC.send(Distro.stringify(data), DiscordIPC.OPCODES.FRAME)
 end
 
 function DiscordIPC.receive()
-    local opcode, length, data = nil, nil, nil
-
     if DiscordIPC.is_windows then
-        opcode, length = Distro.unpack(DiscordIPC.read(8))
-        data = DiscordIPC.read(length)
+        local header = DiscordIPC.read(8)
+        if not header then return nil, nil end
+        local opcode, length = Distro.unpack(header)
+        local data = DiscordIPC.read(length)
+        return opcode, data
     else
         local header_buffer = ffi.new("char[8]")
         local header_bytes = ffi.C.recv(DiscordIPC.socket, header_buffer, 8, 0)
-        opcode, length = Distro.unpack(ffi.string(header_buffer, header_bytes))
+        if header_bytes < 0 then return nil, nil end
+        local opcode, length = Distro.unpack(ffi.string(header_buffer, header_bytes))
 
-        local data_buffer = ffi.new("char["..length.."]")
+        local data_buffer = ffi.new("char[?]", length)
         local data_bytes = ffi.C.recv(DiscordIPC.socket, data_buffer, length, 0)
-        data = ffi.string(data_buffer, data_bytes)
+        if data_bytes < 0 then return nil, nil end
+        local data = ffi.string(data_buffer, data_bytes)
+
+        return opcode, data
     end
-
-    print("Distro :: Received "..opcode.." - "..data)
-
-    return opcode, data
 end

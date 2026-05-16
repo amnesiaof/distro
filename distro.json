@@ -1,0 +1,13 @@
+{
+    "id": "Distro",
+    "name": "Distro",
+    "display_name": "Distro",
+    "author": ["DVRP", "Alex"],
+    "description": "Discord Rich Presence for Balatro. Forked from dvrp0/distro with modern SMODS improvements.",
+    "prefix": "distro",
+    "main_file": "distro.lua",
+    "priority": 0,
+    "badge_colour": "6C5CE7",
+    "version": "2.0.0",
+    "dependencies": ["Steamodded (>=1.0.0~BETA-1620a)"]
+}
