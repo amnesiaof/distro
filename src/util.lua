@@ -19,18 +19,39 @@ function Distro.get_pid()
     end
 end
 
+local function json_val(v)
+    if type(v) == "table" then
+        return Distro.stringify(v)
+    elseif type(v) == "string" then
+        return '"'..v..'"'
+    else
+        return tostring(v)
+    end
+end
+
 function Distro.stringify(data)
+    local is_array = true
+    local max_idx = 0
+    local count = 0
+    for k, v in pairs(data) do
+        count = count + 1
+        if type(k) ~= "number" or k < 1 or math.floor(k) ~= k then
+            is_array = false
+        end
+        if type(k) == "number" and k > max_idx then max_idx = k end
+    end
+
+    if is_array and max_idx > 0 then
+        local result = {}
+        for i = 1, max_idx do
+            table.insert(result, json_val(data[i]))
+        end
+        return "["..table.concat(result, ",").."]"
+    end
+
     local result = {}
     for k, v in pairs(data) do
-        local formatted
-        if type(v) == "table" then
-            formatted = Distro.stringify(v)
-        elseif type(v) == "string" then
-            formatted = '"'..v..'"'
-        else
-            formatted = tostring(v)
-        end
-        table.insert(result, string.format('"%s":%s', k, formatted))
+        table.insert(result, string.format('"%s":%s', k, json_val(v)))
     end
     return "{"..table.concat(result, ",").."}"
 end

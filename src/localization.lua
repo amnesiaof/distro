@@ -8,6 +8,9 @@ Distro.translations = {
             if data.progress then table.insert(parts, data.progress) end
             if data.hands then table.insert(parts, data.hands.." Hands") end
             if data.discards then table.insert(parts, data.discards.." Discards") end
+            if data.score and data.score > 0 then table.insert(parts, "Score: "..data.score) end
+            if data.hand_type then table.insert(parts, data.hand_type) end
+            if data.elapsed then table.insert(parts, data.elapsed) end
             return table.concat(parts, " | ")
         end,
         shop = "In Shop",
@@ -16,10 +19,6 @@ Distro.translations = {
         ante = "Ante",
         round = "Round",
         money = "$",
-        cfg_tab_display = "Display",
-        cfg_tab_extra = "Extra",
-        cfg_tab_carousel = "Carousel",
-        cfg_language = "Language",
         cfg_show_ante = "Show Ante",
         cfg_show_round = "Show Round",
         cfg_show_blind = "Show Blind Name",
@@ -30,8 +29,15 @@ Distro.translations = {
         cfg_show_stake = "Show Stake",
         cfg_show_challenge = "Show Challenge Mode",
         cfg_show_blind_progress = "Blind Score Progress",
+        cfg_show_hand_type = "Show Hand Type",
+        cfg_show_score = "Show Score",
+        cfg_show_elapsed = "Show Elapsed Time",
+        cfg_show_button = "Show Steam Button",
         cfg_carousel = "Enable Carousel",
         cfg_reset_defaults = "Reset to defaults",
+        elapsed_min = "m",
+        elapsed_hr = "h",
+        elapsed_day = "d",
     },
     ["ru"] = {
         idle = "В меню",
@@ -42,6 +48,9 @@ Distro.translations = {
             if data.progress then table.insert(parts, data.progress) end
             if data.hands then table.insert(parts, data.hands.." рук") end
             if data.discards then table.insert(parts, data.discards.." сбросов") end
+            if data.score and data.score > 0 then table.insert(parts, "Счёт: "..data.score) end
+            if data.hand_type then table.insert(parts, data.hand_type) end
+            if data.elapsed then table.insert(parts, data.elapsed) end
             return table.concat(parts, " | ")
         end,
         shop = "В магазине",
@@ -50,10 +59,6 @@ Distro.translations = {
         ante = "Анте",
         round = "Раунд",
         money = "$",
-        cfg_tab_display = "Основные",
-        cfg_tab_extra = "Дополнительно",
-        cfg_tab_carousel = "Карусель",
-        cfg_language = "Язык",
         cfg_show_ante = "Показывать анте",
         cfg_show_round = "Показывать раунд",
         cfg_show_blind = "Название блайнда",
@@ -64,8 +69,15 @@ Distro.translations = {
         cfg_show_stake = "Ставка",
         cfg_show_challenge = "Режим испытаний",
         cfg_show_blind_progress = "Прогресс блайнда",
+        cfg_show_hand_type = "Тип комбинации",
+        cfg_show_score = "Счёт",
+        cfg_show_elapsed = "Время в забеге",
+        cfg_show_button = "Кнопка Steam",
         cfg_carousel = "Режим карусели",
         cfg_reset_defaults = "Сбросить настройки",
+        elapsed_min = "м",
+        elapsed_hr = "ч",
+        elapsed_day = "д",
     },
 }
 

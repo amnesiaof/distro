@@ -20,6 +20,44 @@ local function format_num(n)
     return s
 end
 
+local function get_hand_type_name()
+    local h = G.hand_text_area
+    if h and h.handname then
+        return h.handname
+    end
+    return nil
+end
+
+local function get_score_text()
+    local chips = G.GAME.chips
+    local mult = G.GAME.mult
+    if chips and mult and chips > 0 and mult > 0 then
+        return format_num(chips * mult)
+    end
+    if chips and chips > 0 then
+        return format_num(chips)
+    end
+    return nil
+end
+
+local function get_elapsed_text()
+    if not Distro.run_start then return nil end
+    local elapsed = os.time() - Distro.run_start
+    if elapsed < 60 then return nil end
+    local minutes = math.floor(elapsed / 60)
+    if minutes < 60 then
+        return minutes..Distro.t("elapsed_min")
+    end
+    local hours = math.floor(minutes / 60)
+    local rem_min = minutes % 60
+    if hours < 24 then
+        return hours..Distro.t("elapsed_hr").." "..rem_min..Distro.t("elapsed_min")
+    end
+    local days = math.floor(hours / 24)
+    local rem_hrs = hours % 24
+    return days..Distro.t("elapsed_day").." "..rem_hrs..Distro.t("elapsed_hr")
+end
+
 local function format_fields(keys)
     local parts = {}
     for _, k in ipairs(keys) do
@@ -35,7 +73,24 @@ local function format_fields(keys)
 end
 
 local function format_details()
-    return format_fields({"ante", "round", "money"})
+    local base = format_fields({"ante", "round", "money"})
+    local extras = {}
+    if Distro.config.show_blind then
+        local name = Distro.get_blind_name()
+        if name and name ~= "" then table.insert(extras, name) end
+    end
+    if Distro.config.show_hand_type then
+        local hand = get_hand_type_name()
+        if hand then table.insert(extras, hand) end
+    end
+    if #extras > 0 then
+        if base == "" then
+            base = table.concat(extras, " | ")
+        else
+            base = base.." | "..table.concat(extras, " | ")
+        end
+    end
+    return base
 end
 
 local function playing_state_text()
@@ -45,7 +100,29 @@ local function playing_state_text()
     if Distro.config.show_blind_progress and G.GAME.chips and G.GAME.blind and G.GAME.blind.chips then
         data.progress = format_num(G.GAME.chips).." / "..format_num(G.GAME.blind.chips)
     end
+    if Distro.config.show_score then
+        local score = get_score_text()
+        if score then data.score = score end
+    end
+    if Distro.config.show_hand_type then
+        local hand = get_hand_type_name()
+        if hand then data.hand_type = hand end
+    end
+    if Distro.config.show_elapsed then
+        local elapsed = get_elapsed_text()
+        if elapsed then data.elapsed = elapsed end
+    end
     return Distro.t("playing", data)
+end
+
+local function build_buttons()
+    if not Distro.config.show_button then return nil end
+    return {
+        {
+            label = "Get Balatro on Steam",
+            url = "https://store.steampowered.com/app/2379780/Balatro/"
+        }
+    }
 end
 
 -- Normal mode: send combined data
@@ -82,6 +159,13 @@ local function update_activity(details, state)
         if not Distro.config.show_stake then
             DiscordIPC.activity.assets.small_image = nil
         end
+    end
+
+    local buttons = build_buttons()
+    if buttons then
+        DiscordIPC.activity.buttons = buttons
+    else
+        DiscordIPC.activity.buttons = nil
     end
 
     DiscordIPC.send_activity()
@@ -233,6 +317,7 @@ local start_run_ref = Game.start_run
 function Game:start_run(args)
     start_run_ref(self, args)
     carousel.last = love.timer.getTime()
+    Distro.run_start = os.time()
     update_activity(format_details(), Distro.t("start_run"))
 end
 
@@ -254,8 +339,7 @@ function Game:update_selecting_hand(dt)
         if Distro.config.carousel then
             update_activity(carousel_tick())
         else
-            local blind_name = Distro.config.show_blind and Distro.get_blind_name() or nil
-            local details = blind_name and (format_details().." | "..blind_name) or format_details()
+            local details = format_details()
             update_activity(details, playing_state_text())
         end
     end
@@ -285,6 +369,7 @@ local function set_end_state(state)
         large_image = "default",
         large_text = "Balatro"
     }
+    DiscordIPC.activity.buttons = nil
     DiscordIPC.send_activity()
 end
 

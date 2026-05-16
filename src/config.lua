@@ -2,20 +2,6 @@ local mod = SMODS.current_mod
 local cfg = mod.config
 Distro.config = cfg
 
-local DEFAULTS = {
-    show_ante = true,
-    show_round = true,
-    show_blind = true,
-    show_hands = true,
-    show_discards = true,
-    show_money = false,
-    show_deck = false,
-    show_stake = false,
-    show_challenge = true,
-    show_blind_progress = false,
-    carousel = false,
-}
-
 Distro.get_language = function()
     return G.SETTINGS.language or "en-us"
 end
@@ -40,6 +26,15 @@ local function build_col(keys)
     return ns
 end
 
+local DEFAULTS = {
+    show_ante = true, show_round = true, show_blind = true,
+    show_hands = true, show_discards = true, show_money = false,
+    show_deck = false, show_stake = false, show_challenge = true,
+    show_blind_progress = false, show_hand_type = true,
+    show_score = false, show_elapsed = false, show_button = false,
+    carousel = false,
+}
+
 G.FUNCS.distro_reset_defaults = function()
     for k, v in pairs(DEFAULTS) do
         cfg[k] = v
@@ -50,7 +45,7 @@ end
 
 mod.config_tab = function()
     local left_keys = {"show_ante", "show_round", "show_blind", "show_hands", "show_discards", "show_money"}
-    local right_keys = {"show_deck", "show_stake", "show_challenge", "show_blind_progress", "carousel"}
+    local right_keys = {"show_deck", "show_stake", "show_challenge", "show_blind_progress", "show_hand_type", "show_score", "show_elapsed", "show_button"}
 
     return {
         n = G.UIT.ROOT,
