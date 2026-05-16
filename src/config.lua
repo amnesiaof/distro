@@ -25,8 +25,12 @@ local function lbl(key)
     return Distro.t("cfg_"..key)
 end
 
-local function toggle(label, ref)
-    return create_toggle({label = label, ref_table = cfg, ref_value = ref})
+local function toggle_row(label, ref)
+    return {
+        n = G.UIT.R,
+        config = { align = 'cm' },
+        nodes = { create_toggle({label = label, ref_table = cfg, ref_value = ref}) }
+    }
 end
 
 SMODS.current_mod.config_tab = function()
@@ -36,42 +40,49 @@ SMODS.current_mod.config_tab = function()
         table.insert(tab_opts, Distro.t("cfg_tab_"..k))
     end
 
-    local content
+    local nodes = {
+        { n = G.UIT.R, config = { align = 'cm' }, nodes = {
+            { n = G.UIT.T, config = { text = "Distro", scale = 0.5, colour = G.C.UI.TEXT_LIGHT } }
+        }},
+        { n = G.UIT.R, config = { align = 'cm', minh = 0.1 }},
+        { n = G.UIT.R, config = { align = 'cm' }, nodes = {
+            create_option_cycle({label = "", ref_table = tab_state, ref_value = "value", options = tab_opts})
+        }},
+    }
+
+    local tab_nodes
     if tab == "display" then
-        content = {
-            create_option_cycle({label = lbl("language"), ref_table = cfg, ref_value = "language", options = {"auto", "en-us", "ru"}}),
-            {n = G.UIT.R, config = {align = 'cm', minh = 0.05}},
-            toggle(lbl("show_ante"), "show_ante"),
-            toggle(lbl("show_round"), "show_round"),
-            toggle(lbl("show_blind"), "show_blind"),
-            toggle(lbl("show_hands"), "show_hands"),
-            toggle(lbl("show_discards"), "show_discards"),
-            toggle(lbl("show_money"), "show_money"),
+        tab_nodes = {
+            { n = G.UIT.R, config = { align = 'cm' }, nodes = {
+                create_option_cycle({label = lbl("language"), ref_table = cfg, ref_value = "language", options = {"auto", "en-us", "ru"}})
+            }},
+            toggle_row(lbl("show_ante"), "show_ante"),
+            toggle_row(lbl("show_round"), "show_round"),
+            toggle_row(lbl("show_blind"), "show_blind"),
+            toggle_row(lbl("show_hands"), "show_hands"),
+            toggle_row(lbl("show_discards"), "show_discards"),
+            toggle_row(lbl("show_money"), "show_money"),
         }
     elseif tab == "extra" then
-        content = {
-            toggle(lbl("show_deck"), "show_deck"),
-            toggle(lbl("show_stake"), "show_stake"),
-            toggle(lbl("show_challenge"), "show_challenge"),
-            toggle(lbl("show_blind_progress"), "show_blind_progress"),
+        tab_nodes = {
+            toggle_row(lbl("show_deck"), "show_deck"),
+            toggle_row(lbl("show_stake"), "show_stake"),
+            toggle_row(lbl("show_challenge"), "show_challenge"),
+            toggle_row(lbl("show_blind_progress"), "show_blind_progress"),
         }
     else
-        content = {
-            toggle(lbl("carousel"), "carousel"),
+        tab_nodes = {
+            toggle_row(lbl("carousel"), "carousel"),
         }
+    end
+
+    for _, node in ipairs(tab_nodes) do
+        table.insert(nodes, node)
     end
 
     return {
         n = G.UIT.ROOT,
-        config = {align = 'cm', padding = 0.1, colour = G.C.CLEAR},
-        nodes = {
-            {n = G.UIT.R, config = {align = 'cm'}, nodes = {
-                {n = G.UIT.T, config = {text = "Distro", scale = 0.5, colour = G.C.UI.TEXT_LIGHT}}
-            }},
-            {n = G.UIT.R, config = {align = 'cm', minh = 0.1}},
-            create_option_cycle({label = "", ref_table = tab_state, ref_value = "value", options = tab_opts}),
-            {n = G.UIT.R, config = {align = 'cm', minh = 0.05}},
-            content,
-        }
+        config = { align = 'cm', padding = 0.1, colour = G.C.CLEAR },
+        nodes = nodes,
     }
 end
