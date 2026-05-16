@@ -5,9 +5,10 @@ Distro.translations = {
         blind_select = "Selecting Blind",
         playing = function(data)
             local parts = {}
+            if data.progress then table.insert(parts, data.progress) end
             if data.hands then table.insert(parts, data.hands.." Hands") end
             if data.discards then table.insert(parts, data.discards.." Discards") end
-            return table.concat(parts, ", ").." left"
+            return table.concat(parts, " | ")
         end,
         shop = "In Shop",
         game_over = "Run Over",
@@ -22,9 +23,10 @@ Distro.translations = {
         blind_select = "Выбор блайнда",
         playing = function(data)
             local parts = {}
+            if data.progress then table.insert(parts, data.progress) end
             if data.hands then table.insert(parts, data.hands.." рук") end
             if data.discards then table.insert(parts, data.discards.." сбросов") end
-            return "Осталось: "..table.concat(parts, ", ")
+            return table.concat(parts, " | ")
         end,
         shop = "В магазине",
         game_over = "Забег проигран",

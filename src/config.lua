@@ -29,6 +29,7 @@ SMODS.current_mod.config_tab = function()
             create_toggle({label = "Show Deck", ref_table = cfg, ref_value = "show_deck"}),
             create_toggle({label = "Show Stake", ref_table = cfg, ref_value = "show_stake"}),
             create_toggle({label = "Show Challenge Mode", ref_table = cfg, ref_value = "show_challenge"}),
+            create_toggle({label = "Blind Progress", ref_table = cfg, ref_value = "show_blind_progress"}),
         }
     }
 end

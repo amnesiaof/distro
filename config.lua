@@ -9,5 +9,6 @@ return {
     show_deck = false,
     show_stake = false,
     show_challenge = true,
+    show_blind_progress = false,
     update_interval = 1.0,
 }

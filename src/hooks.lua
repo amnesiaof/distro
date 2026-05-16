@@ -1,5 +1,15 @@
 local last_update = 0
 
+local function format_num(n)
+    local s = tostring(math.floor(n))
+    local k = 3
+    while #s > k do
+        s = s:sub(1, #s - k)..","..s:sub(#s - k + 1)
+        k = k + 4
+    end
+    return s
+end
+
 local function should_update()
     local now = love.timer.getTime()
     if now - last_update >= Distro.config.update_interval then
@@ -110,6 +120,9 @@ function Game:update_selecting_hand(dt)
         local state_data = {}
         if Distro.config.show_hands then state_data.hands = G.GAME.current_round.hands_left end
         if Distro.config.show_discards then state_data.discards = G.GAME.current_round.discards_left end
+        if Distro.config.show_blind_progress and G.GAME.chips and G.GAME.blind and G.GAME.blind.chips then
+            state_data.progress = format_num(G.GAME.chips).." / "..format_num(G.GAME.blind.chips)
+        end
 
         update_activity(details, Distro.t("playing", state_data))
     end
