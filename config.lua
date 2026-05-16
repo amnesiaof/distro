@@ -10,5 +10,8 @@ return {
     show_stake = false,
     show_challenge = true,
     show_blind_progress = false,
+    carousel = false,
+    carousel_interval = 3,
+    carousel_pages = {"progress", "blind", "money", "deck", "hand"},
     update_interval = 1.0,
 }

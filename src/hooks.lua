@@ -1,15 +1,5 @@
 local last_update = 0
 
-local function format_num(n)
-    local s = tostring(math.floor(n))
-    local k = 3
-    while #s > k do
-        s = s:sub(1, #s - k)..","..s:sub(#s - k + 1)
-        k = k + 4
-    end
-    return s
-end
-
 local function should_update()
     local now = love.timer.getTime()
     if now - last_update >= Distro.config.update_interval then
@@ -19,24 +9,48 @@ local function should_update()
     return false
 end
 
-local function format_details()
+local function format_num(n)
+    if not n then return "0" end
+    local s = tostring(math.floor(n))
+    local k = 3
+    while #s > k do
+        s = s:sub(1, #s - k)..","..s:sub(#s - k + 1)
+        k = k + 4
+    end
+    return s
+end
+
+local function format_fields(keys)
     local parts = {}
-    if Distro.config.show_ante then
-        table.insert(parts, Distro.t("ante").." "..G.GAME.round_resets.ante)
-    end
-    if Distro.config.show_round then
-        table.insert(parts, Distro.t("round").." "..G.GAME.round)
-    end
-    if Distro.config.show_money then
-        table.insert(parts, Distro.t("money")..G.GAME.dollars)
+    for _, k in ipairs(keys) do
+        if k == "ante" and Distro.config.show_ante then
+            table.insert(parts, Distro.t("ante").." "..G.GAME.round_resets.ante)
+        elseif k == "round" and Distro.config.show_round then
+            table.insert(parts, Distro.t("round").." "..G.GAME.round)
+        elseif k == "money" and Distro.config.show_money then
+            table.insert(parts, Distro.t("money")..G.GAME.dollars)
+        end
     end
     return table.concat(parts, " | ")
 end
 
-local function update_activity(details, state)
-    if not should_update() then
-        return
+local function format_details()
+    return format_fields({"ante", "round", "money"})
+end
+
+local function playing_state_text()
+    local data = {}
+    if Distro.config.show_hands then data.hands = G.GAME.current_round.hands_left end
+    if Distro.config.show_discards then data.discards = G.GAME.current_round.discards_left end
+    if Distro.config.show_blind_progress and G.GAME.chips and G.GAME.blind and G.GAME.blind.chips then
+        data.progress = format_num(G.GAME.chips).." / "..format_num(G.GAME.blind.chips)
     end
+    return Distro.t("playing", data)
+end
+
+-- Normal mode: send combined data
+local function update_activity(details, state)
+    if not should_update() then return end
 
     local back_key, back_name = Distro.get_back_name()
     local stake_key, stake_name = Distro.get_stake_name()
@@ -73,6 +87,126 @@ local function update_activity(details, state)
     DiscordIPC.send_activity()
 end
 
+-- Carousel pages
+local carousel = { idx = 1, last = 0 }
+
+local pages = {}
+
+pages.progress = {
+    details = function() return format_fields({"ante", "round"}) end,
+    state = function()
+        if G.STATE == G.STATES.SELECTING_HAND then return playing_state_text()
+        elseif G.STATE == G.STATES.SHOP then return Distro.t("shop")
+        elseif G.STATE == G.STATES.BLIND_SELECT then return Distro.t("blind_select") end
+        return ""
+    end,
+    available = function() return true end,
+}
+
+pages.blind = {
+    details = function() return Distro.get_blind_name() end,
+    state = function()
+        if G.GAME.chips and G.GAME.blind and G.GAME.blind.chips then
+            return format_num(G.GAME.chips).." / "..format_num(G.GAME.blind.chips)
+        end
+        return ""
+    end,
+    available = function()
+        return Distro.config.show_blind and G.GAME.blind and G.GAME.blind.chips
+            and G.STATE == G.STATES.SELECTING_HAND
+    end,
+}
+
+pages.money = {
+    details = function() return Distro.t("money")..G.GAME.dollars end,
+    state = function()
+        local parts = {}
+        if Distro.config.show_deck then
+            local _, name = Distro.get_back_name()
+            table.insert(parts, name)
+        end
+        if Distro.config.show_stake then
+            local _, name = Distro.get_stake_name()
+            if name then table.insert(parts, name) end
+        end
+        if #parts == 0 and G.GAME.challenge and Distro.config.show_challenge then
+            for _, v in ipairs(G.CHALLENGES) do
+                if v.id == G.GAME.challenge then
+                    table.insert(parts, "Challenge ("..v.name..")")
+                    break
+                end
+            end
+        end
+        return table.concat(parts, " | ")
+    end,
+    available = function() return Distro.config.show_money end,
+}
+
+pages.deck = {
+    details = function() return format_fields({"ante", "round"}) end,
+    state = function()
+        local parts = {}
+        if G.hand and G.hand.cards then table.insert(parts, #G.hand.cards.." in hand") end
+        if G.deck and G.deck.cards then table.insert(parts, #G.deck.cards.." in deck") end
+        if G.jokers and G.jokers.cards then table.insert(parts, #G.jokers.cards.." jokers") end
+        return table.concat(parts, " | ")
+    end,
+    available = function() return true end,
+}
+
+pages.hand = {
+    details = function()
+        local h = G.hand_text_area
+        if h and h.handname and h.hand_level then
+            return h.handname.." lv."..h.hand_level
+        end
+        return format_fields({"ante", "round"})
+    end,
+    state = function()
+        local h = G.hand_text_area
+        local parts = {}
+        if h and h.chips then table.insert(parts, "+"..format_num(h.chips).." chips") end
+        if h and h.mult then table.insert(parts, "x"..format_num(h.mult).." mult") end
+        return table.concat(parts, " | ")
+    end,
+    available = function()
+        return G.STATE == G.STATES.SELECTING_HAND
+            and G.hand_text_area and G.hand_text_area.handname
+    end,
+}
+
+local function get_active_pages()
+    local active = {}
+    for _, key in ipairs(Distro.config.carousel_pages) do
+        local p = pages[key]
+        if p and p.available() then
+            table.insert(active, p)
+        end
+    end
+    return active
+end
+
+local function carousel_tick()
+    local active = get_active_pages()
+    if #active == 0 then
+        carousel.idx = 1
+        return format_fields({"ante"}), Distro.t("idle")
+    end
+
+    local now = love.timer.getTime()
+    if now - carousel.last >= Distro.config.carousel_interval then
+        carousel.last = now
+        carousel.idx = carousel.idx % #active + 1
+    end
+
+    local p = active[carousel.idx]
+    local d = p.details()
+    local s = p.state()
+    if not d or d == "" then d = format_fields({"ante", "round"}) end
+    if not s then s = "" end
+    return d, s
+end
+
 local main_menu_ref = Game.main_menu
 function Game:main_menu(change_context)
     main_menu_ref(self, change_context)
@@ -89,9 +223,7 @@ function Game:main_menu(change_context)
     end
 
     if not DiscordIPC.activity.timestamps then
-        DiscordIPC.activity.timestamps = {
-            start = os.time() * 1000
-        }
+        DiscordIPC.activity.timestamps = { start = os.time() * 1000 }
     end
 
     update_activity("Balatro", Distro.t("idle"))
@@ -100,13 +232,18 @@ end
 local start_run_ref = Game.start_run
 function Game:start_run(args)
     start_run_ref(self, args)
+    carousel.last = love.timer.getTime()
     update_activity(format_details(), Distro.t("start_run"))
 end
 
 local update_blind_select_ref = Game.update_blind_select
 function Game:update_blind_select(dt)
     if not G.STATE_COMPLETE then
-        update_activity(format_details(), Distro.t("blind_select"))
+        if Distro.config.carousel then
+            update_activity(carousel_tick())
+        else
+            update_activity(format_details(), Distro.t("blind_select"))
+        end
     end
     update_blind_select_ref(self, dt)
 end
@@ -114,17 +251,13 @@ end
 local update_selecting_hand_ref = Game.update_selecting_hand
 function Game:update_selecting_hand(dt)
     if not G.STATE_COMPLETE then
-        local blind_name = Distro.config.show_blind and Distro.get_blind_name() or nil
-        local details = blind_name and (format_details().." | "..blind_name) or format_details()
-
-        local state_data = {}
-        if Distro.config.show_hands then state_data.hands = G.GAME.current_round.hands_left end
-        if Distro.config.show_discards then state_data.discards = G.GAME.current_round.discards_left end
-        if Distro.config.show_blind_progress and G.GAME.chips and G.GAME.blind and G.GAME.blind.chips then
-            state_data.progress = format_num(G.GAME.chips).." / "..format_num(G.GAME.blind.chips)
+        if Distro.config.carousel then
+            update_activity(carousel_tick())
+        else
+            local blind_name = Distro.config.show_blind and Distro.get_blind_name() or nil
+            local details = blind_name and (format_details().." | "..blind_name) or format_details()
+            update_activity(details, playing_state_text())
         end
-
-        update_activity(details, Distro.t("playing", state_data))
     end
     update_selecting_hand_ref(self, dt)
 end
@@ -132,7 +265,11 @@ end
 local update_shop_ref = Game.update_shop
 function Game:update_shop(dt)
     if not G.STATE_COMPLETE then
-        update_activity(format_details(), Distro.t("shop"))
+        if Distro.config.carousel then
+            update_activity(carousel_tick())
+        else
+            update_activity(format_details(), Distro.t("shop"))
+        end
     end
     update_shop_ref(self, dt)
 end
@@ -154,7 +291,6 @@ end
 local game_update_ref = Game.update
 function Game:update(dt)
     game_update_ref(self, dt)
-
     if G.GAME and G.GAME.round_resets and G.GAME.round_resets.ante and G.GAME.round_resets.ante > 0 then
         if game_over_state and G.STATE == game_over_state then
             if not end_shown then
