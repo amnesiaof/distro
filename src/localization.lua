@@ -10,6 +10,8 @@ Distro.translations = {
             return table.concat(parts, ", ").." left"
         end,
         shop = "In Shop",
+        game_over = "Run Over",
+        win = "Victory!",
         ante = "Ante",
         round = "Round",
         money = "$",
@@ -25,6 +27,8 @@ Distro.translations = {
             return "Осталось: "..table.concat(parts, ", ")
         end,
         shop = "В магазине",
+        game_over = "Забег проигран",
+        win = "Победа!",
         ante = "Анте",
         round = "Раунд",
         money = "$",

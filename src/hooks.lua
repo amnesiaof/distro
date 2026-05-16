@@ -124,6 +124,43 @@ function Game:update_shop(dt)
     update_shop_ref(self, dt)
 end
 
+local game_over_state = G.STATES and G.STATES.GAME_OVER
+local win_state = G.STATES and G.STATES.WIN
+local end_shown = false
+
+local function set_end_state(state)
+    DiscordIPC.activity.details = "Balatro"
+    DiscordIPC.activity.state = state
+    DiscordIPC.activity.assets = {
+        large_image = "default",
+        large_text = "Balatro"
+    }
+    DiscordIPC.send_activity()
+end
+
+local game_update_ref = Game.update
+function Game:update(dt)
+    game_update_ref(self, dt)
+
+    if G.GAME and G.GAME.round_resets and G.GAME.round_resets.ante and G.GAME.round_resets.ante > 0 then
+        if game_over_state and G.STATE == game_over_state then
+            if not end_shown then
+                end_shown = true
+                set_end_state(Distro.t("game_over"))
+            end
+        elseif win_state and G.STATE == win_state then
+            if not end_shown then
+                end_shown = true
+                set_end_state(Distro.t("win"))
+            end
+        else
+            end_shown = false
+        end
+    else
+        end_shown = false
+    end
+end
+
 local quit_ref = G.FUNCS.quit
 function G.FUNCS.quit(e)
     DiscordIPC.close()
