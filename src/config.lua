@@ -35,7 +35,7 @@ end
 local DEFAULTS = {
     show_ante = true, show_round = true, show_blind = true,
     show_hands = true, show_discards = true, show_money = false,
-    show_deck = false, show_stake = false, show_challenge = true,
+    show_deck = true, show_stake = true, show_challenge = true,
     show_blind_progress = false, show_hand_type = true,
     show_score = false, show_elapsed = false, show_button = false,
     carousel = false,
