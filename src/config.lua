@@ -10,6 +10,12 @@ local function save_config()
     SMODS.save_mod_config(mod)
 end
 
+local COL_KEYS = {
+    {"show_ante", "show_round", "show_blind", "show_hands", "show_discards"},
+    {"show_money", "show_deck", "show_stake", "show_challenge", "show_blind_progress"},
+    {"show_hand_type", "show_score", "show_elapsed", "show_button", "carousel"},
+}
+
 local function toggle_row(label, ref)
     return {
         n = G.UIT.R,
@@ -44,17 +50,16 @@ G.FUNCS.distro_reset_defaults = function()
 end
 
 mod.config_tab = function()
-    local left_keys = {"show_ante", "show_round", "show_blind", "show_hands", "show_discards", "show_money"}
-    local right_keys = {"show_deck", "show_stake", "show_challenge", "show_blind_progress", "show_hand_type", "show_score", "show_elapsed", "show_button"}
+    local cols = {}
+    for _, keys in ipairs(COL_KEYS) do
+        table.insert(cols, { n = G.UIT.C, config = { align = "cm" }, nodes = build_col(keys) })
+    end
 
     return {
         n = G.UIT.ROOT,
-        config = { r = 0.1, minw = 8, align = "tm", padding = 0.2, colour = G.C.BLACK },
+        config = { r = 0.1, minw = 14, align = "tm", padding = 0.15, colour = G.C.BLACK },
         nodes = {
-            { n = G.UIT.R, config = { padding = 0.2 }, nodes = {
-                { n = G.UIT.C, config = { align = "cm" }, nodes = build_col(left_keys) },
-                { n = G.UIT.C, config = { align = "cm" }, nodes = build_col(right_keys) },
-            }},
+            { n = G.UIT.R, config = { padding = 0.1 }, nodes = cols },
             { n = G.UIT.R, config = { padding = 0.1, align = "cm" }, nodes = {
                 UIBox_button({
                     button = "distro_reset_defaults",
