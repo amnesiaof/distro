@@ -31,6 +31,7 @@ Distro.translations = {
         cfg_show_challenge = "Show Challenge Mode",
         cfg_show_blind_progress = "Blind Score Progress",
         cfg_carousel = "Enable Carousel",
+        cfg_reset_defaults = "Reset to defaults",
     },
     ["ru"] = {
         idle = "В меню",
@@ -64,6 +65,7 @@ Distro.translations = {
         cfg_show_challenge = "Режим испытаний",
         cfg_show_blind_progress = "Прогресс блайнда",
         cfg_carousel = "Режим карусели",
+        cfg_reset_defaults = "Сбросить настройки",
     },
 }
 
