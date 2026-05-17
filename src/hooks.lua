@@ -90,6 +90,7 @@ local function format_details()
             base = base.." | "..table.concat(extras, " | ")
         end
     end
+    if base == "" then base = "Balatro" end
     return base
 end
 
@@ -249,7 +250,7 @@ local function carousel_tick()
     local p = active[carousel.idx]
     local d = p.details()
     local s = p.state()
-    if not d or d == "" then d = format_fields({"ante", "round"}) end
+    if not d or d == "" then d = "Balatro" end
     if not s then s = "" end
     return d, s
 end
