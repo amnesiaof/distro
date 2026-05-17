@@ -13,7 +13,7 @@ end
 local COL_KEYS = {
     {"show_ante", "show_round", "show_blind", "show_hands", "show_discards"},
     {"show_money", "show_deck", "show_stake", "show_challenge", "show_blind_progress"},
-    {"show_hand_type", "show_score", "show_elapsed", "show_button", "carousel"},
+    {"show_hand_type", "show_score", "show_elapsed", "carousel"},
 }
 
 local function toggle_row(label, ref)
@@ -37,7 +37,7 @@ local DEFAULTS = {
     show_hands = true, show_discards = true, show_money = false,
     show_deck = true, show_stake = true, show_challenge = true,
     show_blind_progress = false, show_hand_type = true,
-    show_score = false, show_elapsed = false, show_button = false,
+    show_score = false, show_elapsed = false,
     carousel = false,
 }
 

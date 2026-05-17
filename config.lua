@@ -13,7 +13,6 @@ return {
     show_hand_type = true,
     show_score = false,
     show_elapsed = false,
-    show_button = false,
     carousel = false,
     carousel_interval = 3,
     carousel_pages = {"progress", "blind", "money", "deck", "hand"},

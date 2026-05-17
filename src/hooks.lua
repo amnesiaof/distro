@@ -115,17 +115,6 @@ local function playing_state_text()
     return Distro.t("playing", data)
 end
 
-local function build_buttons()
-    if not Distro.config.show_button then return nil end
-    return {
-        {
-            label = "Get Balatro on Steam",
-            url = "https://store.steampowered.com/app/2379780/Balatro/"
-        }
-    }
-end
-
--- Normal mode: send combined data
 local function update_activity(details, state)
     if not should_update() then return end
 
@@ -161,12 +150,7 @@ local function update_activity(details, state)
         end
     end
 
-    local buttons = build_buttons()
-    if buttons then
-        DiscordIPC.activity.buttons = buttons
-    else
-        DiscordIPC.activity.buttons = nil
-    end
+    DiscordIPC.activity.buttons = nil
 
     DiscordIPC.send_activity()
 end
