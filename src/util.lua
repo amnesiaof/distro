@@ -137,9 +137,5 @@ function Distro.get_blind_name()
     if not center then
         return ""
     end
-    local name = center.name or key
-    if center.loc_txt and center.loc_txt.name then
-        name = center.loc_txt.name
-    end
-    return name
+    return localize{key = key, type = 'blind'}
 end
