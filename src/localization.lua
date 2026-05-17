@@ -8,7 +8,7 @@ Distro.translations = {
             if data.progress then table.insert(parts, data.progress) end
             if data.hands then table.insert(parts, data.hands.." Hands") end
             if data.discards then table.insert(parts, data.discards.." Discards") end
-            if data.score and data.score > 0 then table.insert(parts, "Score: "..data.score) end
+            if data.score then table.insert(parts, "Score: "..data.score) end
             if data.hand_type then table.insert(parts, data.hand_type) end
             if data.elapsed then table.insert(parts, data.elapsed) end
             return table.concat(parts, " | ")
@@ -47,7 +47,7 @@ Distro.translations = {
             if data.progress then table.insert(parts, data.progress) end
             if data.hands then table.insert(parts, data.hands.." рук") end
             if data.discards then table.insert(parts, data.discards.." сбросов") end
-            if data.score and data.score > 0 then table.insert(parts, "Счёт: "..data.score) end
+            if data.score then table.insert(parts, "Счёт: "..data.score) end
             if data.hand_type then table.insert(parts, data.hand_type) end
             if data.elapsed then table.insert(parts, data.elapsed) end
             return table.concat(parts, " | ")
