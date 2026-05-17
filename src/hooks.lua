@@ -371,3 +371,9 @@ function G.FUNCS.quit(e)
     DiscordIPC.close()
     quit_ref(e)
 end
+
+local love_quit_ref = love.quit
+function love.quit()
+    DiscordIPC.close()
+    if love_quit_ref then return love_quit_ref() end
+end
