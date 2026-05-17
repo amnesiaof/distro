@@ -294,7 +294,14 @@ function Game:main_menu(change_context)
         DiscordIPC.activity.timestamps = { start = os.time() * 1000 }
     end
 
-    update_activity("Balatro", Distro.t("idle"))
+    DiscordIPC.activity.details = "Balatro"
+    DiscordIPC.activity.state = Distro.t("idle")
+    DiscordIPC.activity.assets = {
+        large_image = "default",
+        large_text = nil,
+    }
+    DiscordIPC.activity.buttons = nil
+    DiscordIPC.send_activity()
 end
 
 local start_run_ref = Game.start_run
