@@ -15,6 +15,6 @@ return {
     show_elapsed = false,
     carousel = false,
     carousel_interval = 3,
-    carousel_pages = {"progress", "blind", "money", "deck", "hand"},
+    carousel_pages = {"progress", "blind", "money", "hand"},
     update_interval = 1.0,
 }

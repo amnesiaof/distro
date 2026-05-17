@@ -200,18 +200,6 @@ pages.money = {
     available = function() return Distro.config.show_money end,
 }
 
-pages.deck = {
-    details = function() return format_fields({"ante", "round"}) end,
-    state = function()
-        local parts = {}
-        if G.hand and G.hand.cards then table.insert(parts, #G.hand.cards.." in hand") end
-        if G.deck and G.deck.cards then table.insert(parts, #G.deck.cards.." in deck") end
-        if G.jokers and G.jokers.cards then table.insert(parts, #G.jokers.cards.." jokers") end
-        return table.concat(parts, " | ")
-    end,
-    available = function() return true end,
-}
-
 pages.hand = {
     details = function()
         local h = G.hand_text_area
@@ -257,6 +245,7 @@ local function carousel_tick()
         carousel.idx = carousel.idx % #active + 1
     end
 
+    if carousel.idx > #active then carousel.idx = 1 end
     local p = active[carousel.idx]
     local d = p.details()
     local s = p.state()
