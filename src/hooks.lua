@@ -188,24 +188,14 @@ pages.blind = {
 pages.money = {
     details = function() return Distro.t("money")..G.GAME.dollars end,
     state = function()
-        local parts = {}
-        if Distro.config.show_deck then
-            local _, name = Distro.get_back_name()
-            table.insert(parts, name)
-        end
-        if Distro.config.show_stake then
-            local _, name = Distro.get_stake_name()
-            if name then table.insert(parts, name) end
-        end
-        if #parts == 0 and G.GAME.challenge and Distro.config.show_challenge then
+        if G.GAME.challenge and Distro.config.show_challenge then
             for _, v in ipairs(G.CHALLENGES) do
                 if v.id == G.GAME.challenge then
-                    table.insert(parts, "Challenge ("..v.name..")")
-                    break
+                    return "Challenge ("..v.name..")"
                 end
             end
         end
-        return table.concat(parts, " | ")
+        return ""
     end,
     available = function() return Distro.config.show_money end,
 }
