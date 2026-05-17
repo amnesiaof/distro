@@ -22,7 +22,7 @@ end
 
 local function get_hand_type_name()
     local h = G.hand_text_area
-    if h and h.handname then
+    if h and type(h.handname) == "string" then
         return h.handname
     end
     return nil
@@ -241,7 +241,7 @@ pages.deck = {
 pages.hand = {
     details = function()
         local h = G.hand_text_area
-        if h and h.handname and h.hand_level then
+        if h and type(h.handname) == "string" and h.hand_level then
             return h.handname.." lv."..h.hand_level
         end
         return format_fields({"ante", "round"})
@@ -255,7 +255,7 @@ pages.hand = {
     end,
     available = function()
         return G.STATE == G.STATES.SELECTING_HAND
-            and G.hand_text_area and G.hand_text_area.handname
+            and G.hand_text_area and type(G.hand_text_area.handname) == "string"
     end,
 }
 
